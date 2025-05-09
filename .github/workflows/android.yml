@@ -1,0 +1,69 @@
+name: بناء تطبيق زمولي
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: التحقق من الكود
+        uses: actions/checkout@v2
+
+      - name: إعداد Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+
+
+      
+      - name: إعداد الأذونات للتنفيذ
+        run: |
+          chmod +x ./gradlew
+          mkdir -p app/build/outputs/apk/debug/
+      
+
+
+      - name: بناء APK
+        run: ./gradlew assembleDebug
+
+
+      - name: تحضير APK للتحميل
+        run: mkdir -p artifacts && cp app/build/outputs/apk/debug/*.apk artifacts/ || echo "لم يتم العثور على APK"
+
+      - name: رفع ملف APK
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-debug
+          path: artifacts/*.apk
+
+
+      - name: إنشاء إصدار
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*.apk
+          name: زمولي v${{ github.run_number }}
+          tag_name: v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          body: |
+            # تطبيق زمولي للمساعدة الصحية
+            
+            الإصدار التلقائي رقم ${{ github.run_number }}
+            
+            ## المميزات
+            
+            - التعرف على الصوت والنطق
+            - تحليل طبي ذكي
+            - ذكاء اصطناعي متكيف
+            - دعم اللغة العربية واللهجات المحلية
+            - واجهة مستخدم سهلة الاستخدام
